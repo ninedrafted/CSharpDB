@@ -1,0 +1,5 @@
+CSharpDB/bin
+*.suo
+*.csproj.user
+*.FileListAbsolute.txt
+CSharpDB/obj
