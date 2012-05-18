@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CSharpDB{
+namespace CSharpDB {
     public class BTree<T1> where T1 : IComparable {
-        //TODO: measure trees weight to use heavier tree as replacement when current is removed
-        private long weight = 0;
+        //TODO: check weight before adding to rearrange the tree if senseful
+        private long weight = 1;
         public BTree() { Equal = new List<DBIndex>(); }
         public BTree(ref List<List<T1>> column, DBIndex row) {
             this.Column = column;
@@ -120,6 +120,55 @@ namespace CSharpDB{
             }
             return null;
         }
+        public bool WeightCheck() {
+            long w = 1 + Equal.Count;
+            bool ret = true;
+            if (Greater != null) {
+                w += Greater.weight;
+                ret = Greater.WeightCheck();
+            }
+            if (Less != null) {
+                w += Less.weight;
+                ret = Less.WeightCheck() && ret;
+            }
+            ret = w == weight && ret;
+            if (!ret)
+                Console.WriteLine("0.0");
+            return ret;
+        }
+        private int _integrityCheck(T1 value) {
+            int c = value.CompareTo(GetItem());
+            if (Greater != null) {
+                int tmp = value.CompareTo(Greater.GetItem());
+                if (tmp != c) {
+                    Console.WriteLine("Disordered:\t" + this.ToString());
+                    return 0;
+                }
+                tmp = Greater._integrityCheck(GetItem());
+                if (tmp != -1) {
+                    Console.WriteLine("Disordered:\t" + this.ToString());
+                    return 0;
+                }
+            }
+            if (Less != null) {
+                int tmp = value.CompareTo(Less.GetItem());
+                if (tmp != c) {
+                    Console.WriteLine("Disordered:\t" + this.ToString());
+                    return 0;
+                }
+                tmp = Less._integrityCheck(GetItem());
+                if (tmp != 1) {
+                    Console.WriteLine("Disordered:\t" + this.ToString());
+                    return 0;
+                }
+            }
+            return c;
+        }
+        public bool IntegrityCheck() {
+            bool ret = Greater == null || Greater._integrityCheck(GetItem()) == -1;
+            ret = (Less == null || Less._integrityCheck(GetItem()) == 1) && ret;
+            return ret;
+        }
         public List<DBIndex> GetSortedList(bool inverse = false) {
             List<DBIndex> ret = new List<DBIndex>();
             if (inverse && Greater != null) ret.AddRange(Greater.GetSortedList(inverse));
@@ -140,11 +189,10 @@ namespace CSharpDB{
                     if (Greater.weight >= Less.weight) {
                         this.Row = Greater.Row;
                         this.Equal = Greater.Equal;
-                        if (Greater.Greater.weight >= Greater.Less.weight) {
+                        if (Greater.Greater != null && Greater.Less != null && Greater.Greater.weight >= Greater.Less.weight) {
                             BTree<T1> tmpTreeLess = Greater.Less;
                             Greater = Greater.Greater;
-                            if (Greater != null) Greater._Add(tmpTreeLess);
-                            else Greater = tmpTreeLess;
+                            Greater._Add(tmpTreeLess);
                         }
                         else {
                             BTree<T1> tmpTreeGreater = Greater.Greater;
@@ -158,11 +206,10 @@ namespace CSharpDB{
                     else {
                         this.Row = Less.Row;
                         this.Equal = Less.Equal;
-                        if (Less.Greater.weight >= Less.Less.weight) {
+                        if (Less.Greater != null && Less.Less != null && Less.Greater.weight >= Less.Less.weight) {
                             BTree<T1> tmpTreeLess = Less.Less;
                             Less = Less.Greater;
-                            if (Less != null) Less._Add(tmpTreeLess);
-                            else Less = tmpTreeLess;
+                            Less._Add(tmpTreeLess);
                         }
                         else {
                             BTree<T1> tmpTreeGreater = Less.Greater;
@@ -180,24 +227,14 @@ namespace CSharpDB{
                     if (Greater.Greater != null && Greater.Less != null && Greater.Greater.weight >= Greater.Less.weight) {
                         BTree<T1> tmpTreeLess = Greater.Less;
                         Greater = Greater.Greater;
-                        if (Greater != null) Greater._Add(tmpTreeLess);
-                        else Greater = tmpTreeLess;
+                        Greater._Add(tmpTreeLess);
                     }
                     else {
-                        if (Greater.Greater != null && Greater.Greater != null) {
-                            BTree<T1> tmpTreeGreater = Greater.Greater;
-                            Greater = Greater.Less;
-                            if (Greater != null) Greater._Add(tmpTreeGreater);
-                            else Greater = tmpTreeGreater;
-                        }
-                        else {
-                            if (Greater.Greater != null) {
-                                Greater = Greater.Greater;
-                            }
-                            else {
-                                Greater = Greater.Less;
-                            }
-                        }
+                        BTree<T1> tmpTreeGreater = Greater.Greater;
+                        Greater = Greater.Less;
+                        if (Greater != null) Greater._Add(tmpTreeGreater);
+                        else Greater = tmpTreeGreater;
+
                     }
                     resetWeight();
                     return false;
@@ -205,12 +242,10 @@ namespace CSharpDB{
                 if (Less != null) {
                     this.Row = Less.Row;
                     this.Equal = Less.Equal;
-                    this.weight = Less.weight;
-                    if (Less.Greater.weight >= Less.Less.weight) {
+                    if (Less.Greater != null && Less.Less != null && Less.Greater.weight >= Less.Less.weight) {
                         BTree<T1> tmpTreeLess = Less.Less;
                         Less = Less.Greater;
-                        if (Less != null) Less._Add(tmpTreeLess);
-                        else Less = tmpTreeLess;
+                        Less._Add(tmpTreeLess);
                     }
                     else {
                         BTree<T1> tmpTreeGreater = Less.Greater;
@@ -263,6 +298,7 @@ namespace CSharpDB{
                 ret.Less = Less.Clone();
             if (Greater != null)
                 ret.Greater = Greater.Clone();
+            ret.resetWeight();
             return ret;
 
         }
