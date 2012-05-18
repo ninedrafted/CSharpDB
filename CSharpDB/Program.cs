@@ -6,12 +6,12 @@ namespace CSharpDB {
         static void Main(string[] args) {
             DBTest cdb = new DBTest();
             Random r = new Random();
-            for (int i = 0; i < 800; i++) {
+            for (int i = 0; i < 500; i++) {
                 cdb.Add(r.Next(1000));
             }
             List<int> toRemove = new List<int>();
-            for (int i = 0; i < 100; i++) {
-                cdb.Add(r.Next(1000));
+            for (int i = 0; i < 1000; i++) {
+                toRemove.Add(r.Next(1000));
             }
             cdb.Add(5);
             cdb.Add(25);
@@ -34,7 +34,11 @@ namespace CSharpDB {
                 t.RemoveAll(toRemove[i]);
             }
             Console.WriteLine("WeightCheck (!some random numbers):\t" + t.IntegrityCheck());
-            List<DBIndex> list = t.GetSortedList();
+            List<DBIndex> list = t.GetSortedList(true);
+            for (int i = 0; i < list.Count; i++) {
+                Console.Write(cdb.Column0[list[i].A][list[i].B] + " ");
+            }
+            Console.WriteLine();
             Console.WriteLine("WeightCheck:\t" + t.IntegrityCheck());
             Console.ReadLine();
             int[] v = cdb.GetValues(list);
