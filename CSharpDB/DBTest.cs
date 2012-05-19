@@ -9,8 +9,7 @@ namespace CSharpDB {
             if (Column0.Count == 0)
                 Column0.Add(new List<int>());
             Column0[0].Add(value);
-            DBIndex i = new DBIndex();
-            i.Index = Column0[0].Count - 1;
+            DBIndex i = new DBIndex(Column0[0].Count - 1);
             indexes.Add(i);
             if (Root == null)
                 Root = new BTree<int>(ref Column0, indexes[indexes.Count - 1]);

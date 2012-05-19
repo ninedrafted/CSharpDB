@@ -71,7 +71,7 @@ namespace CSharpDB {
                 }
             }
         }
-        private void _Add(BTree<T1> tree, bool optimize = true) {
+        private void _Add(BTree<T1> tree) {
             if (tree == null) return;
             weight += tree.weight;
             int c = tree.CompareTo(this);
@@ -85,14 +85,13 @@ namespace CSharpDB {
                 }
                 else Less = tree.Less;
                 Equal.Add(tree.Row);
-                if (optimize) _rotate();
+                Equal.AddRange(tree.Equal);
                 return;
             }
             if (tree.GetMin().CompareTo(this) == 1) {
                 if (c > 0) {
                     if (Greater != null) Greater._Add(tree);
                     else Greater = tree;
-                    if (optimize) _rotate();
                     return;
                 }
             }
@@ -100,7 +99,6 @@ namespace CSharpDB {
                 if (c < 0) {
                     if (Less != null) Less._Add(tree);
                     else Less = tree;
-                    if (optimize) _rotate();
                     return;
                 }
             }
@@ -108,9 +106,15 @@ namespace CSharpDB {
                 Console.WriteLine("Tree does not fit in here!\n" + this.ToString() + "\nTree: " + tree.ToString());
             }
         }
-        public void Add(DBIndex row) {
+        public void RotateAll() {
+            _rotate();
+            if (Greater != null) Greater.RotateAll();
+            if (Less != null) Less.RotateAll();
+        }
+        public void Add(DBIndex row, bool optimize = true) {
             BTree<T1> toAdd = new BTree<T1>(ref Column, row);
             _Add(toAdd);
+            if (optimize) RotateAll();
             return;
         }
         public List<DBIndex> GetRow(T1 item) {
@@ -143,7 +147,7 @@ namespace CSharpDB {
                 ret.Equal = this.Equal;
                 ret.Greater = this.Greater;
                 if (c < 0 && Less != null)
-                    ret._Add(Less.GetGreaterAndEqual(item, equal), false);
+                    ret._Add(Less.GetGreaterAndEqual(item, equal));
                 return ret.Clone();
             }
             if ((c > 0 || c == 0 && !equal) && Greater != null) {

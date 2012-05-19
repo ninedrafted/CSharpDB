@@ -9,7 +9,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpDB</RootNamespace>
-    <AssemblyName>CustomDB</AssemblyName>
+    <AssemblyName>CSharpDB</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -44,6 +44,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BTree.cs" />
+    <Compile Include="DB.cs" />
+    <Compile Include="DBCloumDescriptor.cs" />
     <Compile Include="DBIndex.cs" />
     <Compile Include="DBTest.cs" />
     <Compile Include="Program.cs" />

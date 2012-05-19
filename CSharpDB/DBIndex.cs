@@ -1,17 +1,26 @@
 ﻿
 namespace CSharpDB {
     public class DBIndex {
+        public DBIndex(long index) {
+            this.Index = index;
+        }
+        public DBIndex(int a, int b) {
+            this._a = a;
+            this._b = b;
+        }
         public long Index {
             get { return _index; }
             set {
                 _index = value;
-                A = (int)(value / int.MaxValue);
-                B = (int)(value % int.MaxValue);
+                _a = (int)(value / int.MaxValue);
+                _b = (int)(value % int.MaxValue);
             }
 
         }
         private long _index;
-        public int A { get; private set; }
-        public int B { get; private set; }
+        private int _a;
+        public int A { get { return _a; } }
+        private int _b;
+        public int B { get { return _b; } }
     }
 }
