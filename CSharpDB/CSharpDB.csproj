@@ -45,7 +45,6 @@
   <ItemGroup>
     <Compile Include="BTree.cs" />
     <Compile Include="DB.cs" />
-    <Compile Include="DBCloumDescriptor.cs" />
     <Compile Include="DBIndex.cs" />
     <Compile Include="DBTest.cs" />
     <Compile Include="Program.cs" />

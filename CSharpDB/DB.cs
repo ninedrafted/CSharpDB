@@ -5,7 +5,7 @@ using System.Text;
 
 namespace CSharpDB {
     class DB {
-        public DB(params DBCloumDescriptor[] desc) {
+        public DB(params string[] desc) {
             Trees = new BTree<IComparable>[desc.Length];
             Names = new string[desc.Length];
             Values = new List<List<IComparable>>[desc.Length];
@@ -14,7 +14,7 @@ namespace CSharpDB {
             for (int i = 0; i < desc.Length; i++) {
                 Values[i] = new List<List<IComparable>>();
                 Values[i].Add(new List<IComparable>());
-                Names[i] = desc[i].Name;
+                Names[i] = desc[i];
             }
         }
         List<List<IComparable>>[] Values;
@@ -48,12 +48,19 @@ namespace CSharpDB {
                 }
             }
         }
-        public void dooRotateAll(int times) {
+        public void RotateAll(int times) {
             for (int i = 0; i < Trees.Length; i++) {
                 for (int ii = 0; ii < times; ii++) {
                     Trees[i].RotateAll();
                 }
             }
+        }
+        public bool WeightCheck() {
+            for (int i = 0; i < Trees.Length; i++) {
+                if (!Trees[i].WeightCheck())
+                    return false;
+            }
+            return true;
         }
         private List<IComparable> GetRow(DBIndex index) {
             List<IComparable> ret = new List<IComparable>();
