@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Data.SQLite;
 
 namespace CSharpDB {
     class Program {
@@ -70,8 +72,14 @@ namespace CSharpDB {
             DB db2 = new DB("preceding", "itself", "following");
             DB db3 = new DB("preceding", "itself", "following");
 
+            SQLiteConnection sql1 = new SQLiteConnection();
+            sql1.ConnectionString = "Data Source=memory";
+            sql1.Open();
+            SQLiteCommand command = new SQLiteCommand(sql1);
+            command.CommandText = "CREATE TABLE IF NOT EXISTS sql1 ( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, preceding TEXT, itself TEXT, following TEXT );";
+            command.ExecuteNonQuery();
             Stopwatch s = new Stopwatch();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
             for (int i = 1; i < splitted.Length - 1; i++) {
                 db1.Add(false, splitted[i - 1], splitted[i], splitted[i + 1]);
@@ -80,7 +88,7 @@ namespace CSharpDB {
             Console.WriteLine("Adding to DB1 without optimisation " + (splitted.Length - 2) + " times 3 strings lasted: " + s.Elapsed);
             s = new Stopwatch();
             splitted = someText.Split(' ');
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
             for (int i = 1; i < splitted.Length - 1; i++) {
                 db2.Add(false, splitted[i - 1], splitted[i], splitted[i + 1]);
@@ -88,26 +96,44 @@ namespace CSharpDB {
             s.Stop();
             Console.WriteLine("Adding to DB2 without optimisation " + (splitted.Length - 2) + " times 3 strings lasted: " + s.Elapsed);
             s = new Stopwatch();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
-            for (int i = 1; i < splitted.Length - 1; i++) {
+            for (int i = 1; i < splitted.Length / 10 - 1; i++) {
                 db3.Add(true, splitted[i - 1], splitted[i], splitted[i + 1]);
             }
             s.Stop();
-            Console.WriteLine("Adding to DB3 with optimisation " + (splitted.Length - 2) + " times 3 strings lasted: " + s.Elapsed);
+            Console.WriteLine("Adding to DB3 with optimisation " + (splitted.Length / 10 - 2) + " times 3 strings lasted: " + s.Elapsed);
+            s = new Stopwatch();
+            System.Threading.Thread.Sleep(100);
+            s.Start();
+            for (int i = 1; i < splitted.Length - 1; i++) {
+                command = new SQLiteCommand(sql1);
+                command.CommandText = "INSERT INTO sql1 (preceding, itself, following) VALUES('?','?','?');";
+                SQLiteParameter[] paras = new SQLiteParameter[3];
+                paras[0] = new SQLiteParameter();
+                paras[0].Value = splitted[i - 1];
+                paras[1] = new SQLiteParameter();
+                paras[1].Value = splitted[i];
+                paras[2] = new SQLiteParameter();
+                paras[2].Value = splitted[i + 1];
+                command.Parameters.AddRange(paras);
+                command.ExecuteNonQuery();
+            }
+            s.Stop();
+            Console.WriteLine("Adding to SQL1 " + (splitted.Length - 2) + " times 3 strings lasted: " + s.Elapsed);
             s = new Stopwatch();
             Console.WriteLine("DB1 WeightCheck: " + db1.WeightCheck());
             Console.WriteLine("DB2 WeightCheck: " + db2.WeightCheck());
             Console.WriteLine("DB3 WeightCheck: " + db3.WeightCheck());
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
-            db2.RotateAll(10000);
+            // db2.RotateAll(10000);
             s.Stop();
             Console.WriteLine("Optimistation of DB2 lasted: " + s.Elapsed);
 
             List<List<IComparable>> gets = new List<List<IComparable>>();
             s = new Stopwatch();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
             for (int i = 0; i < 500; i++) {
                 gets.AddRange(db1.GetWhere("itself", "is"));
@@ -117,7 +143,7 @@ namespace CSharpDB {
             Console.WriteLine("Getting of DB1 in 1000 request " + gets.Count + " rows lasted:" + s.Elapsed);
             gets = new List<List<IComparable>>();
             s = new Stopwatch();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
             for (int i = 0; i < 500; i++) {
                 gets.AddRange(db2.GetWhere("itself", "is"));
@@ -127,7 +153,7 @@ namespace CSharpDB {
             Console.WriteLine("Getting of DB2 in 1000 request " + gets.Count + " rows lasted:" + s.Elapsed);
             gets = new List<List<IComparable>>();
             s = new Stopwatch();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(100);
             s.Start();
             for (int i = 0; i < 500; i++) {
                 gets.AddRange(db3.GetWhere("itself", "is"));
@@ -135,6 +161,27 @@ namespace CSharpDB {
             }
             s.Stop();
             Console.WriteLine("Getting of DB3 in 1000 request " + gets.Count + " rows lasted:" + s.Elapsed);
+            List<SQLiteDataReader> readers = new List<SQLiteDataReader>();
+            s = new Stopwatch();
+            System.Threading.Thread.Sleep(100);
+            s.Start();
+            for (int i = 0; i < 500; i++) {
+                command = new SQLiteCommand(sql1);
+                command.CommandText = "SELECT preceding, itself, following FROM sql1 WHERE itself=='is' OR itself=='to';";
+                readers.Add(command.ExecuteReader(System.Data.CommandBehavior.Default));
+            }
+            s.Stop();
+            TimeSpan elapsed = s.Elapsed;
+            System.Threading.Thread.Sleep(100);
+            s = new Stopwatch();
+            s.Start();
+            int sqlcount = 0;
+            command = new SQLiteCommand(sql1);
+            command.CommandText = "SELECT count(*) FROM sql1 WHERE itself=='is' OR itself=='to';";
+            sqlcount = (int)(Int64)command.ExecuteScalar();
+
+            s.Stop();
+            Console.WriteLine("Getting of SQL1 in 500 request " + sqlcount + " rows lasted:" + elapsed + " (" + s.Elapsed + ")");
             Console.ReadLine();
         }
     }
