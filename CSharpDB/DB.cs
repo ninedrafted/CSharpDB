@@ -82,5 +82,16 @@ namespace CSharpDB {
             }
             return ret;
         }
+        public void UpdateWhere(string name, IComparable equals, IComparable newValue) {
+            for (int i = 0; i < Names.Length; i++) {
+                if (name == Names[i]) {
+                    List<DBIndex> row = Trees[i].GetAndRemoveAll(equals);
+                    for (int ii = 0; ii < row.Count; ii++) {
+                        Values[i][row[ii].A][row[ii].B] = newValue;
+                    }
+                    Trees[i].Add(row);
+                }
+            }
+        }
     }
 }

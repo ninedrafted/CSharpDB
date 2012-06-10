@@ -74,6 +74,13 @@ namespace CSharpDB {
         }
         private void _Add(BTree<T1> tree, bool shift = true) {
             if (tree == null) return;
+            if (this.Row == null) {
+                this.Row = tree.Row;
+                this.Equal = tree.Equal;
+                this.weight = tree.weight;
+                this.Less = tree.Less;
+                this.Greater = tree.Greater;
+            }
             int c = tree.CompareTo(this);
             if (c == 0) {
                 if (Greater != null) {
@@ -129,6 +136,20 @@ namespace CSharpDB {
             _Add(toAdd);
             if (optimize) RotateAll();
             return;
+        }
+        public void Add(List<DBIndex> equals, bool check = false) {
+            if (equals == null || equals.Count == 0) return;
+            if (check) {
+                for (int i = 1; i < equals.Count; i++) {
+                    if (Column[equals[0].A][equals[0].B].CompareTo(Column[equals[i].A][equals[i].B]) != 0)
+                        throw new Exception("The values aren't equal in BTree.Add(List<DBIndex>,bool=false)");
+                }
+            }
+            BTree<T1> toAdd = new BTree<T1>(ref Column, equals[0]);
+            if (equals.Count > 1) {
+                toAdd.Equal = equals.GetRange(1, equals.Count - 1);
+            }
+            _Add(toAdd);
         }
         public List<DBIndex> GetRow(T1 item) {
             int c = item.CompareTo(Column[this.Row.A][this.Row.B]);
@@ -304,6 +325,10 @@ namespace CSharpDB {
                 }
                 return false;
             }
+            this.Row = null;
+            this.Equal = null;
+            this.weight = 0;
+
             return true;
         }
         private bool _RemoveAll(T1 item) {
@@ -335,6 +360,25 @@ namespace CSharpDB {
             if (_RemoveAll(item))
                 return null;
             else return this;
+        }
+        public List<DBIndex> GetAndRemoveAll(T1 item) {
+            int c = item.CompareTo(Column[this.Row.A][this.Row.B]);
+            if (c == 0) {
+                List<DBIndex> ret = GetThisRow();
+                _RemoveThis();
+                return ret;
+            }
+            if (c < 0) {
+                if (Less == null)
+                    return new List<DBIndex>();
+                return Less.GetAndRemoveAll(item);
+            }
+            if (c > 0) {
+                if (Greater == null)
+                    return new List<DBIndex>();
+                return Greater.GetAndRemoveAll(item);
+            }
+            return null;
         }
         private bool _Remove(DBIndex row) {
             int c = Column[row.A][row.B].CompareTo(Column[this.Row.A][this.Row.B]);
